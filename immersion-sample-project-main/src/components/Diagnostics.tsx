@@ -93,27 +93,27 @@ export default function Diagnostics() {
   const medicalModels = [
     {
       title: "Liver Disease",
-      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop"
+      image: "liver.jpg"
     },
     {
       title: "Pneumonia",
-      image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=300&fit=crop"
+      image: "pueomonia.jpeg"
     },
     {
       title: "Kidney Disease", 
-      image: "https://images.unsplash.com/photo-1559757175-0eb42c7b0c19?w=400&h=300&fit=crop"
+      image: "kidney.jpg"
     },
     {
       title: "Diabetes",
-      image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop"
+      image: "diabetes.jpeg"
     },
     {
       title: "Stroke",
-      image: "https://images.unsplash.com/photo-1559757175-9b4b0d3e7b70?w=400&h=300&fit=crop"
+      image: "stroke.jpeg"
     },
     {
       title: "Heart Disease",
-      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c12?w=400&h=300&fit=crop"
+      image: "heart.jpeg"
     }
   ];
 

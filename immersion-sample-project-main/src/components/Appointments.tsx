@@ -60,7 +60,7 @@ const appointments = [
     date: "2024-01-21", 
     time: "3:30 PM",
     type: "Emergency",
-    doctor: "Dr. Brown",
+    doctor: "Dr. Prafful",
     status: "Urgent",
     phone: "(555) 567-8901",
     reason: "Chest pain and breathing difficulty"

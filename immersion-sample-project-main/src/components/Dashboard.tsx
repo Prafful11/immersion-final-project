@@ -20,7 +20,7 @@ const stats = [
   },
   {
     title: "Pending Bills",
-    value: "$45,230",
+    value: "$452",
     change: "-8%",
     trend: "down",
     icon: CreditCard,
