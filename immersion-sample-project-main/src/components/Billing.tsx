@@ -13,6 +13,9 @@ import {
   CheckCircle,
   Clock
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const billingRecords = [
   {
@@ -61,7 +64,7 @@ const billingRecords = [
   },
   {
     id: "INV-005",
-    patientName: "David Lee",
+    patientName: "Rohit",
     patientId: "P005",
     date: "2024-01-19",
     amount: 1200.00,
@@ -73,19 +76,41 @@ const billingRecords = [
 ];
 
 export default function Billing() {
+  const [bills, setBills] = useState(billingRecords);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBill, setSelectedBill] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filter, setFilter] = useState({ status: "", paymentMethod: "" });
+  const { toast } = useToast();
 
-  const filteredBills = billingRecords.filter(bill =>
-    bill.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bill.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bill.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Form state for creating invoice
+  const [form, setForm] = useState({
+    patientName: "",
+    patientId: "",
+    date: "",
+    amount: "",
+    services: "",
+    status: "Pending",
+    paymentMethod: "Cash",
+    dueDate: ""
+  });
+
+  // Filtered bills
+  const filteredBills = bills.filter(bill => {
+    const matchesSearch =
+      bill.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bill.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bill.status.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filter.status ? bill.status === filter.status : true;
+    const matchesPayment = filter.paymentMethod ? bill.paymentMethod === filter.paymentMethod : true;
+    return matchesSearch && matchesStatus && matchesPayment;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Paid": return "bg-success text-success-foreground";
-      case "Pending": return "bg-warning text-warning-foreground";  
+      case "Pending": return "bg-warning text-warning-foreground";
       case "Overdue": return "bg-destructive text-destructive-foreground";
       default: return "bg-muted text-muted-foreground";
     }
@@ -100,16 +125,99 @@ export default function Billing() {
     }
   };
 
-  const totalRevenue = billingRecords.reduce((sum, bill) => sum + bill.amount, 0);
-  const paidAmount = billingRecords.filter(b => b.status === "Paid").reduce((sum, bill) => sum + bill.amount, 0);
-  const pendingAmount = billingRecords.filter(b => b.status === "Pending").reduce((sum, bill) => sum + bill.amount, 0);
-  const overdueAmount = billingRecords.filter(b => b.status === "Overdue").reduce((sum, bill) => sum + bill.amount, 0);
+  const totalRevenue = bills.reduce((sum, bill) => sum + bill.amount, 0);
+  const paidAmount = bills.filter(b => b.status === "Paid").reduce((sum, bill) => sum + bill.amount, 0);
+  const pendingAmount = bills.filter(b => b.status === "Pending").reduce((sum, bill) => sum + bill.amount, 0);
+  const overdueAmount = bills.filter(b => b.status === "Overdue").reduce((sum, bill) => sum + bill.amount, 0);
+
+  // Handlers for create invoice
+  const openCreateModal = () => {
+    setForm({
+      patientName: "",
+      patientId: "",
+      date: "",
+      amount: "",
+      services: "",
+      status: "Pending",
+      paymentMethod: "Cash",
+      dueDate: ""
+    });
+    setShowCreateModal(true);
+  };
+  const handleFormChange = (e: any) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleCreate = (e: any) => {
+    e.preventDefault();
+    const newBill = {
+      id: `INV-${bills.length + 1}`,
+      patientName: form.patientName,
+      patientId: form.patientId,
+      date: form.date,
+      amount: parseFloat(form.amount),
+      services: form.services.split(",").map(s => s.trim()),
+      status: form.status,
+      paymentMethod: form.paymentMethod,
+      dueDate: form.dueDate
+    };
+    setBills([newBill, ...bills]);
+    setShowCreateModal(false);
+    toast({ title: "Invoice created!" });
+  };
+
+  // Handlers for filter
+  const openFilterModal = () => setShowFilterModal(true);
+  const handleFilterChange = (e: any) => {
+    setFilter({ ...filter, [e.target.name]: e.target.value });
+  };
+  const handleApplyFilter = () => setShowFilterModal(false);
+  const handleClearFilter = () => {
+    setFilter({ status: "", paymentMethod: "" });
+    setShowFilterModal(false);
+  };
+
+  // Export CSV
+  const handleExport = () => {
+    const csvRows = [
+      [
+        "Invoice ID",
+        "Patient Name",
+        "Patient ID",
+        "Date",
+        "Amount",
+        "Services",
+        "Status",
+        "Payment Method",
+        "Due Date"
+      ],
+      ...filteredBills.map(bill => [
+        bill.id,
+        bill.patientName,
+        bill.patientId,
+        bill.date,
+        bill.amount,
+        bill.services.join("; "),
+        bill.status,
+        bill.paymentMethod,
+        bill.dueDate
+      ])
+    ];
+    const csvContent = csvRows.map(row => row.map(String).map(s => `"${s.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "invoices.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported invoices as CSV." });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">Billing Management</h1>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={openCreateModal}>
           <Plus className="mr-2 h-4 w-4" />
           Create Invoice
         </Button>
@@ -182,14 +290,106 @@ export default function Billing() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">Filter</Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={openFilterModal}>Filter</Button>
+            <Button variant="outline" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Invoice Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Invoice</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="patientName">Patient Name</Label>
+                <Input id="patientName" name="patientName" value={form.patientName} onChange={handleFormChange} required />
+              </div>
+              <div>
+                <Label htmlFor="patientId">Patient ID</Label>
+                <Input id="patientId" name="patientId" value={form.patientId} onChange={handleFormChange} required />
+              </div>
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <Input id="date" name="date" type="date" value={form.date} onChange={handleFormChange} required />
+              </div>
+              <div>
+                <Label htmlFor="amount">Amount</Label>
+                <Input id="amount" name="amount" type="number" value={form.amount} onChange={handleFormChange} required min="0" />
+              </div>
+              <div>
+                <Label htmlFor="services">Services (comma separated)</Label>
+                <Input id="services" name="services" value={form.services} onChange={handleFormChange} required />
+              </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <select id="status" name="status" value={form.status} onChange={handleFormChange} className="w-full border rounded h-10 px-2">
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <select id="paymentMethod" name="paymentMethod" value={form.paymentMethod} onChange={handleFormChange} className="w-full border rounded h-10 px-2">
+                  <option value="Cash">Cash</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Insurance">Insurance</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="dueDate">Due Date</Label>
+                <Input id="dueDate" name="dueDate" type="date" value={form.dueDate} onChange={handleFormChange} required />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-primary hover:bg-primary/90">Create</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filter Modal */}
+      <Dialog open={showFilterModal} onOpenChange={setShowFilterModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filter Invoices</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="filter-status">Status</Label>
+              <select id="filter-status" name="status" value={filter.status} onChange={handleFilterChange} className="w-full border rounded h-10 px-2">
+                <option value="">All</option>
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Overdue">Overdue</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="filter-payment">Payment Method</Label>
+              <select id="filter-payment" name="paymentMethod" value={filter.paymentMethod} onChange={handleFilterChange} className="w-full border rounded h-10 px-2">
+                <option value="">All</option>
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Insurance">Insurance</option>
+              </select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClearFilter}>Clear</Button>
+              <Button type="button" onClick={handleApplyFilter}>Apply</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Billing Records List */}

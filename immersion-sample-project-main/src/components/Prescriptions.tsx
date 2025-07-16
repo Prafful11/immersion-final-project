@@ -13,6 +13,8 @@ import {
   CheckCircle,
   Clock
 } from "lucide-react";
+import QRCode from "react-qr-code";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const prescriptions = [
   {
@@ -73,7 +75,7 @@ const prescriptions = [
   },
   {
     id: "RX-005",
-    patientName: "David Lee",
+    patientName: "Rohit",
     patientId: "P005",
     medication: "Aspirin 81mg",
     dosage: "1 tablet daily",
@@ -90,6 +92,7 @@ const prescriptions = [
 export default function Prescriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+  const [showQR, setShowQR] = useState(false);
 
   const filteredPrescriptions = prescriptions.filter(prescription =>
     prescription.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -244,6 +247,9 @@ export default function Prescriptions() {
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline">Edit</Button>
                     <Button size="sm" variant="outline">Refill</Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowQR(true)}>
+                      QR Code
+                    </Button>
                   </div>
                 </div>
 
@@ -313,6 +319,23 @@ export default function Prescriptions() {
           </CardContent>
         </Card>
       </div>
+      <Dialog open={showQR} onOpenChange={setShowQR}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scan QR for Medicine Info</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <QRCode
+              value={`https://www.google.com/search?q=${encodeURIComponent(selectedPrescription?.medication)}`}
+              size={180}
+            />
+            <div className="text-xs text-muted-foreground text-center">
+              Scan this QR code with your phone to search for <br />
+              <span className="font-semibold">{selectedPrescription?.medication}</span> on Google.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

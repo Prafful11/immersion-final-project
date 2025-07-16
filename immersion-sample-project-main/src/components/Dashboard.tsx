@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, CreditCard, Pill, TrendingUp, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
 
 const stats = [
   {
@@ -51,6 +53,16 @@ const pendingTasks = [
 ];
 
 export default function Dashboard() {
+  const [checkedTasks, setCheckedTasks] = useState<boolean[]>(Array(pendingTasks.length).fill(false));
+
+  const handleCheck = (idx: number) => {
+    setCheckedTasks((prev) => {
+      const updated = [...prev];
+      updated[idx] = !updated[idx];
+      return updated;
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -128,8 +140,8 @@ export default function Dashboard() {
             <div className="space-y-3">
               {pendingTasks.map((task, index) => (
                 <div key={index} className="flex items-start space-x-3 p-3 hover:bg-muted rounded-lg transition-colors">
-                  <div className="w-4 h-4 border-2 border-muted-foreground rounded mt-0.5" />
-                  <p className="text-sm">{task}</p>
+                  <Checkbox checked={checkedTasks[index]} onCheckedChange={() => handleCheck(index)} />
+                  <p className={`text-sm ${checkedTasks[index] ? 'line-through text-muted-foreground' : ''}`}>{task}</p>
                 </div>
               ))}
             </div>
